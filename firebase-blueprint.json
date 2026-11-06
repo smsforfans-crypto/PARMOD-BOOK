@@ -1,0 +1,194 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Book, stationery, cricket, or sports merchandise item sold in Pramod Book Store.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Product display title" },
+        "category": { "type": "string", "description": "Category name or ID" },
+        "price": { "type": "number", "description": "Selling price in INR" },
+        "originalPrice": { "type": "number", "description": "Original MRP price in INR" },
+        "description": { "type": "string", "description": "Detailed product description" },
+        "imageUrl": { "type": "string", "description": "URL or asset reference for product photo" },
+        "inStock": { "type": "boolean", "description": "Stock availability flag" },
+        "stockQuantity": { "type": "integer", "description": "Current quantity in stock" },
+        "rating": { "type": "number", "description": "Average review rating" },
+        "reviewCount": { "type": "integer", "description": "Total number of reviews" },
+        "featured": { "type": "boolean", "description": "Whether highlighted on home screen" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["name", "category", "price", "description", "createdAt", "updatedAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Store category grouping products.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Category identifier" },
+        "name": { "type": "string", "description": "Category display name" },
+        "iconName": { "type": "string", "description": "Icon identifier" },
+        "order": { "type": "integer", "description": "Display order" }
+      },
+      "required": ["name", "order"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Customer profile and contact details.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full customer name" },
+        "email": { "type": "string", "description": "Customer email" },
+        "phone": { "type": "string", "description": "Optional contact phone" },
+        "address": { "type": "string", "description": "Default delivery address" },
+        "city": { "type": "string", "description": "Delivery city" },
+        "postalCode": { "type": "string", "description": "Postal PIN code" },
+        "role": { "type": "string", "enum": ["customer", "admin"], "description": "User role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Update timestamp" }
+      },
+      "required": ["userId", "email", "createdAt", "updatedAt"]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "Shopping cart item for a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Cart item ID" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "productId": { "type": "string", "description": "Target product ID" },
+        "productName": { "type": "string", "description": "Product title" },
+        "productPrice": { "type": "number", "description": "Item price at time of add" },
+        "productImageUrl": { "type": "string", "description": "Product image" },
+        "quantity": { "type": "integer", "description": "Quantity requested" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "productName", "productPrice", "quantity", "createdAt", "updatedAt"]
+    },
+    "WishlistItem": {
+      "title": "WishlistItem",
+      "description": "Saved wishlist product for a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Wishlist document ID (matches productId)" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "productId": { "type": "string", "description": "Target product ID" },
+        "productName": { "type": "string", "description": "Product title" },
+        "productPrice": { "type": "number", "description": "Product price" },
+        "productImageUrl": { "type": "string", "description": "Product image" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "productName", "productPrice", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Order document ID" },
+        "userId": { "type": "string", "description": "Customer user UID" },
+        "customerName": { "type": "string", "description": "Recipient name" },
+        "customerEmail": { "type": "string", "description": "Notification email" },
+        "customerPhone": { "type": "string", "description": "Contact phone" },
+        "shippingAddress": { "type": "string", "description": "Street shipping address" },
+        "city": { "type": "string", "description": "Delivery city" },
+        "postalCode": { "type": "string", "description": "PIN code" },
+        "paymentMethod": { "type": "string", "enum": ["COD", "UPI"], "description": "Payment type" },
+        "paymentStatus": { "type": "string", "enum": ["PENDING", "VERIFIED", "FAILED"], "description": "Verification state" },
+        "upiTransactionId": { "type": "string", "description": "Optional UPI reference number" },
+        "orderStatus": { "type": "string", "enum": ["Order Placed", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"], "description": "Fulfillment status" },
+        "items": { "type": "array", "description": "Purchased items list" },
+        "totalAmount": { "type": "number", "description": "Final payable amount in INR" },
+        "itemsCount": { "type": "integer", "description": "Total items count" },
+        "orderNotes": { "type": "string", "description": "Customer order instructions" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "customerName", "customerEmail", "shippingAddress", "paymentMethod", "paymentStatus", "orderStatus", "items", "totalAmount", "createdAt", "updatedAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Admin UID" },
+        "email": { "type": "string", "description": "Admin email" },
+        "role": { "type": "string", "description": "Role label" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "createdAt"]
+    },
+    "StoreConfig": {
+      "title": "StoreConfig",
+      "description": "Store contact details and policy settings.",
+      "type": "object",
+      "properties": {
+        "supportEmail": { "type": "string", "description": "Support email address" },
+        "supportPhone": { "type": "string", "description": "Support phone number (optional)" },
+        "storeAddress": { "type": "string", "description": "Store physical location" },
+        "aboutText": { "type": "string", "description": "Custom About Us store description" },
+        "termsText": { "type": "string", "description": "Terms and conditions" },
+        "privacyText": { "type": "string", "description": "Privacy policy text" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["supportEmail", "updatedAt"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Customer enquiry or contact form submission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Enquiry document ID" },
+        "name": { "type": "string", "description": "Sender full name" },
+        "email": { "type": "string", "description": "Sender contact email" },
+        "phone": { "type": "string", "description": "Sender phone number" },
+        "subject": { "type": "string", "description": "Enquiry subject" },
+        "message": { "type": "string", "description": "Enquiry body text" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "subject", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Store catalog of books, stationery, cricket and sports equipment."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Product categories."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile with delivery addresses."
+    },
+    "/users/{userId}/cart/{itemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "Shopping cart items for a user."
+    },
+    "/users/{userId}/wishlist/{productId}": {
+      "schema": { "$ref": "#/entities/WishlistItem" },
+      "description": "Saved favorite items for a user."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer order records."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin authorized user registry."
+    },
+    "/settings/{docId}": {
+      "schema": { "$ref": "#/entities/StoreConfig" },
+      "description": "Store contact details and policy settings."
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/Inquiry" },
+      "description": "Customer contact inquiries."
+    }
+  }
+}

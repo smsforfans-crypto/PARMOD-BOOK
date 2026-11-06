@@ -1,0 +1,222 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Catch-All Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'hhahahhah552@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    // 3. Validation Blueprints
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.price is number && data.price >= 0 &&
+             (!('originalPrice' in data) || data.originalPrice == null || (data.originalPrice is number && data.originalPrice >= 0)) &&
+             data.description is string && data.description.size() <= 3000 &&
+             (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 1000)) &&
+             (!('inStock' in data) || data.inStock is bool) &&
+             (!('stockQuantity' in data) || data.stockQuantity is int) &&
+             (!('rating' in data) || data.rating is number) &&
+             (!('reviewCount' in data) || data.reviewCount is int) &&
+             (!('featured' in data) || data.featured is bool) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.order is int &&
+             (!('iconName' in data) || data.iconName == null || (data.iconName is string && data.iconName.size() <= 50));
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             (!('name' in data) || data.name == null || (data.name is string && data.name.size() <= 100)) &&
+             (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 20)) &&
+             (!('address' in data) || data.address == null || (data.address is string && data.address.size() <= 300)) &&
+             (!('city' in data) || data.city == null || (data.city is string && data.city.size() <= 100)) &&
+             (!('postalCode' in data) || data.postalCode == null || (data.postalCode is string && data.postalCode.size() <= 20)) &&
+             (!('role' in data) || data.role in ['customer', 'admin']) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidCartItem(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.productId is string && data.productId.size() > 0 && data.productId.size() <= 128 &&
+             data.productName is string && data.productName.size() > 0 && data.productName.size() <= 200 &&
+             data.productPrice is number && data.productPrice >= 0 &&
+             (!('productImageUrl' in data) || data.productImageUrl == null || (data.productImageUrl is string && data.productImageUrl.size() <= 1000)) &&
+             data.quantity is int && data.quantity > 0 && data.quantity <= 100 &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidWishlistItem(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.productId is string && data.productId.size() > 0 && data.productId.size() <= 128 &&
+             data.productName is string && data.productName.size() > 0 && data.productName.size() <= 200 &&
+             data.productPrice is number && data.productPrice >= 0 &&
+             (!('productImageUrl' in data) || data.productImageUrl == null || (data.productImageUrl is string && data.productImageUrl.size() <= 1000)) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidOrder(data) {
+      return data.userId is string &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 100 &&
+             data.customerEmail is string && data.customerEmail.size() > 0 && data.customerEmail.size() <= 150 &&
+             (!('customerPhone' in data) || data.customerPhone == null || (data.customerPhone is string && data.customerPhone.size() <= 20)) &&
+             data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 300 &&
+             (!('city' in data) || data.city == null || (data.city is string && data.city.size() <= 100)) &&
+             (!('postalCode' in data) || data.postalCode == null || (data.postalCode is string && data.postalCode.size() <= 20)) &&
+             data.paymentMethod in ['COD', 'UPI'] &&
+             data.paymentStatus in ['PENDING', 'VERIFIED', 'FAILED'] &&
+             (!('upiTransactionId' in data) || data.upiTransactionId == null || (data.upiTransactionId is string && data.upiTransactionId.size() <= 100)) &&
+             data.orderStatus in ['Order Placed', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'] &&
+             data.items is list && data.items.size() > 0 && data.items.size() <= 100 &&
+             data.totalAmount is number && data.totalAmount >= 0 &&
+             (!('itemsCount' in data) || data.itemsCount is int) &&
+             (!('orderNotes' in data) || data.orderNotes == null || (data.orderNotes is string && data.orderNotes.size() <= 500)) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidStoreConfig(data) {
+      return data.supportEmail is string && data.supportEmail.size() <= 150 &&
+             (!('supportPhone' in data) || data.supportPhone == null || (data.supportPhone is string && data.supportPhone.size() <= 30)) &&
+             (!('storeAddress' in data) || data.storeAddress == null || (data.storeAddress is string && data.storeAddress.size() <= 300)) &&
+             (!('aboutText' in data) || data.aboutText == null || (data.aboutText is string && data.aboutText.size() <= 3000)) &&
+             (!('termsText' in data) || data.termsText == null || (data.termsText is string && data.termsText.size() <= 5000)) &&
+             (!('privacyText' in data) || data.privacyText == null || (data.privacyText is string && data.privacyText.size() <= 5000)) &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidInquiry(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             (!('phone' in data) || data.phone == null || (data.phone is string && data.phone.size() <= 25)) &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() <= 200 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
+             data.createdAt is timestamp;
+    }
+
+    // 4. Products Collection
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidProduct(incoming()) && incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+      allow update: if isAdmin() && isValidProduct(incoming()) && incoming().createdAt == existing().createdAt && incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin();
+    }
+
+    // 5. Categories Collection
+    match /categories/{categoryId} {
+      allow get, list: if true;
+      allow write: if isAdmin() && isValidCategory(incoming());
+    }
+
+    // 6. User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && incoming().userId == request.auth.uid &&
+                       ((!('role' in incoming())) || incoming().role == 'customer' || isAdmin()) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       (incoming().role == existing().role || isAdmin()) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin();
+
+      // Cart Subcollection
+      match /cart/{itemId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && request.auth.uid == userId && incoming().userId == request.auth.uid &&
+                         isValidCartItem(incoming()) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+        allow update: if isSignedIn() && request.auth.uid == userId && incoming().userId == existing().userId &&
+                         isValidCartItem(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Wishlist Subcollection
+      match /wishlist/{wishlistId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn() && request.auth.uid == userId && incoming().userId == request.auth.uid &&
+                         isValidWishlistItem(incoming()) &&
+                         incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+        allow update: if isSignedIn() && request.auth.uid == userId && incoming().userId == existing().userId &&
+                         isValidWishlistItem(incoming()) &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // 7. Orders Collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid &&
+                       incoming().orderStatus == 'Order Placed' &&
+                       isValidOrder(incoming()) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         existing().orderStatus == 'Order Placed' &&
+         incoming().orderStatus == 'Cancelled' &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['orderStatus', 'updatedAt']))
+      ) && isValidOrder(incoming()) && incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+      allow delete: if isAdmin();
+    }
+
+    // 8. Admin Registry
+    match /admins/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // 9. Store Configuration / Settings (Publicly readable, writable only by Admin)
+    match /settings/{docId} {
+      allow get, list: if true;
+      allow write: if isAdmin() && isValidStoreConfig(incoming()) && incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+    }
+
+    // 10. Customer Inquiries (Creatable by any user or guest, readable by Admin)
+    match /inquiries/{inquiryId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidInquiry(incoming()) && incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+      allow delete: if isAdmin();
+    }
+  }
+}
